@@ -1,0 +1,6 @@
+---
+widgets:
+  - name: Foo
+    desc: This is Foo
+  - name: Bar
+    desc: This is Bar

@@ -1,0 +1,20 @@
+{
+  "name": "kulfon",
+  "version": "0.0.1",
+  "authors": [
+    "Zaiste! <oh@zaiste.net>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bourbon": "~4.2.3",
+    "neat": "~1.7.2",
+    "bitters": "~1.0.0"
+  }
+}

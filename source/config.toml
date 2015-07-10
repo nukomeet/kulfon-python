@@ -1,0 +1,13 @@
+baseurl = "http://example.com/"
+title = "YOUR TITLE"
+languageCode = "en-us"
+copyright = "Copyright (c) 2015, YOUR NAME; all rights reserved."
+MetaDataFormat = "yaml"
+
+[author]
+    name = "YOUR NAME"
+
+[indexes]
+    tag = "tags"
+    topic = "topics"
+

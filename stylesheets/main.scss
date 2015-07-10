@@ -1,0 +1,23 @@
+@import "bourbon";
+@import "grid-settings";
+@import "neat";
+@import "base";
+
+@import "header";
+@import "hero";
+@import "bullets";
+@import "footer";
+
+body {
+  margin: 0;
+}
+
+section {
+  @include outer-container;
+}
+
+
+
+
+
+
