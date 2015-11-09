@@ -5,11 +5,10 @@ setup(
     description='Fast and simple static site generator',
     author='Zaiste',
     author_email='oh@zaiste.net',
-    version='0.2.0',
+    version='0.2.1',
     py_modules=['kulfon'],
     install_requires=[
         'click',
-        'libsass',
         'pyyaml',
         'jinja2',
         'watchdog'

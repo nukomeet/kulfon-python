@@ -65,7 +65,7 @@ def is_template(filename):
 
     return True
 
-def render(data={}, extensions=[], strict=False):
+def render(extensions=[], strict=False):
     env = Environment(
         loader=FileSystemLoader('./views'),
         extensions=extensions,
@@ -87,7 +87,8 @@ class MyHandler(PatternMatchingEventHandler):
         _, ext = os.path.splitext(event.src_path)
         switcher = {
             '.scss': css,
-            '.js': js
+            '.js': js,
+            '.html': render,
         }
         print 'Recompiling %s' % ext
         switcher.get(ext, lambda: None)()
@@ -125,6 +126,9 @@ def css():
 def js():
     os.system("webpack javascripts/app.js dist/assets/app.js > /dev/null")
 
+def images():
+    os.system("rsync -az images/ dist/assets")
+
 @cli.command()
 def init():
     mkdir_p('javascripts')
@@ -137,14 +141,16 @@ def init():
 def build():
     click.echo("building...")
     setup()
-    render(data=data)
+    render()
     css()
     js()
+    images()
 
-event_handler = MyHandler(patterns=['*.scss', '*.js'])
+event_handler = MyHandler(patterns=['*.scss', '*.js', '*.html'])
 observer = Observer()
 observer.schedule(event_handler, path='javascripts/', recursive=True)
 observer.schedule(event_handler, path='stylesheets/', recursive=True)
+observer.schedule(event_handler, path='views/', recursive=True)
 
 @cli.command()
 def watch():
