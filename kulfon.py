@@ -23,7 +23,9 @@ import SocketServer
 
 PORT = 5002
 
-data = {}
+with open("data.yml", 'r') as stream:
+    global data
+    data = yaml.load(stream)
 
 def touch(fname, times=None):
     with open(fname, 'a'):
@@ -80,7 +82,7 @@ def render(extensions=[], strict=False):
 
         mkdir_p(os.path.join('./dist', os.path.dirname(filepath)))
 
-        template.stream(data=data).dump(os.path.join('./dist', filepath), "utf-8")
+        template.stream({'data': data}).dump(os.path.join('./dist', filepath), "utf-8")
 
 class MyHandler(PatternMatchingEventHandler):
     def on_modified(self, event):
@@ -103,10 +105,6 @@ def clean():
 
 def setup():
     mkdir_p('dist/assets')
-
-    with open("data.yml", 'r') as stream:
-        global data
-        data = yaml.load(stream)
 
 def css():
     imports = [] 
