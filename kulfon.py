@@ -21,15 +21,75 @@ from jinja2 import Environment, FileSystemLoader
 import SimpleHTTPServer
 import SocketServer
 
+BASE_HTML="""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Welcome to Kulfon{% endblock %}</title>
+  <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
+
+  <link href="/assets/styles.css" rel="stylesheet">
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+  <script src="/assets/app.js"></script>
+</body>
+</html>
+"""[1:-1]
+
+INDEX_HTML="""
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<h1>Hello, {{ data['name'] }}, I'm Kulfon</h1>
+{% endblock %}
+"""[1:-1]
+
+STYLES_SCSS="""
+body {
+    color: red;
+}
+"""[1:-1]
+
+DATA_YML="""
+name: My Friend
+"""
+
+
+class MyHandler(PatternMatchingEventHandler):
+    def on_modified(self, event):
+        load_data()
+
+        _, ext = os.path.splitext(event.src_path)
+        switcher = {
+            '.scss': css,
+            '.js': js,
+            '.html': render,
+        }
+        click.echo('Recompiling %s' % ext)
+        switcher.get(ext, lambda: None)()
+
+event_handler = MyHandler(patterns=['*.scss', '*.js', '*.html'])
+observer = Observer()
+
 PORT = 5002
 
-with open("data.yml", 'r') as stream:
-    global data
-    data = yaml.load(stream)
+def load_data():
+    with open("data.yml", 'r') as stream:
+        global data
+        data = yaml.load(stream)
 
 def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
+
+def fill(fname, content):
+    with open(fname, 'w') as file:
+        file.write(content)
 
 
 def mkdir_p(path):
@@ -84,16 +144,7 @@ def render(extensions=[], strict=False):
 
         template.stream({'data': data}).dump(os.path.join('./dist', filepath), "utf-8")
 
-class MyHandler(PatternMatchingEventHandler):
-    def on_modified(self, event):
-        _, ext = os.path.splitext(event.src_path)
-        switcher = {
-            '.scss': css,
-            '.js': js,
-            '.html': render,
-        }
-        print 'Recompiling %s' % ext
-        switcher.get(ext, lambda: None)()
+
 
 @click.group()
 def cli():
@@ -114,9 +165,9 @@ def css():
             bower_json = json.load(content)
             imports.append(join('bower_components', bower_json['name'], dirname(bower_json['main'])))
 
-    with open('dist/assets/app.css', 'w') as fout:
+    with open('dist/assets/styles.css', 'w') as fout:
         fout.write(sass.compile(
-            filename='stylesheets/app.scss',
+            filename='stylesheets/styles.scss',
             output_style='compact',
             include_paths=imports
         ))
@@ -128,31 +179,45 @@ def images():
     os.system("rsync -az images/ dist/assets")
 
 @cli.command()
-def init():
-    mkdir_p('javascripts')
-    mkdir_p('stylesheets')
-    mkdir_p('images')
-    mkdir_p('views')
-    touch('data.yml')
+@click.argument('directory', type=click.Path(file_okay=False), default='.')
+def init(directory):
+    """Initialize `kulfon` directory structure; default is `.`, i.e. 
+    current directory.
+    """
+    mkdir_p(join(directory, 'javascripts'))
+    mkdir_p(join(directory, 'stylesheets'))
+    mkdir_p(join(directory, 'images'))
+    mkdir_p(join(directory, 'views', 'layouts'))
+    mkdir_p(join(directory, 'views', 'partials'))
+
+    fill(join(directory, 'stylesheets', 'styles.scss'), STYLES_SCSS)
+    fill(join(directory, 'views', 'index.html'), INDEX_HTML)
+    fill(join(directory, 'views', 'layouts', 'base.html'), BASE_HTML)
+    fill(join(directory, 'data.yml'), DATA_YML)
+
+    touch(join(directory, 'javascripts', 'app.js'))
+
 
 @cli.command()
-def build():
+@click.option('--env', '-e', type=click.Choice(['development', 'production']), 
+    default='development', help='Build in development or production mode; default is `development`.')
+def build(env):
     click.echo("building...")
+    load_data()
     setup()
     render()
     css()
     js()
     images()
 
-event_handler = MyHandler(patterns=['*.scss', '*.js', '*.html'])
-observer = Observer()
-observer.schedule(event_handler, path='javascripts/', recursive=True)
-observer.schedule(event_handler, path='stylesheets/', recursive=True)
-observer.schedule(event_handler, path='views/', recursive=True)
 
 @cli.command()
 def watch():
     click.echo("watching...")
+
+    observer.schedule(event_handler, path='javascripts/', recursive=True)
+    observer.schedule(event_handler, path='stylesheets/', recursive=True)
+    observer.schedule(event_handler, path='views/', recursive=True)
     observer.start()
 
     try:
@@ -161,8 +226,6 @@ def watch():
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
-
-    #os.system("watchman-make -p 'stylesheets/**/*.scss' 'javascripts/**/*.js' 'views/**/*.html' --make kulfon -t build 2> /dev/null")
 
 
 @cli.command()
