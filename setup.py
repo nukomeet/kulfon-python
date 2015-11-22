@@ -5,14 +5,15 @@ setup(
     description='Fast and simple static site generator',
     author='Zaiste',
     author_email='oh@zaiste.net',
-    version='0.2.3',
+    version='0.2.4',
     py_modules=['kulfon'],
     install_requires=[
         'click',
         'pyyaml',
         'jinja2',
         'watchdog',
-        'libsass'
+        'libsass',
+        'webassets'
     ],
     entry_points='''
         [console_scripts]
