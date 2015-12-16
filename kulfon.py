@@ -83,22 +83,33 @@ vendor = []
 for f in glob(join('bower_components', '*', 'bower.json')):
     with open(f) as content:
         bower_json = json.load(content)
-        imports.append(join('bower_components', bower_json['name'], dirname(bower_json['main'])))
 
-        _, ext = os.path.splitext(bower_json['main'])
-        if ext == '.js':
-            vendor.append(join('bower_components', bower_json['name'], bower_json['main']))
+        elems = []
+        if isinstance(bower_json['main'], list):
+            elems = bower_json['main']
+        else:
+            elems = [bower_json['main']]
+
+        for el in elems:
+            imports.append(join('bower_components', bower_json['name'], dirname(el)))
+
+            _, ext = os.path.splitext(el)
+            if ext == '.js':
+                vendor.append(join('bower_components', bower_json['name'], el))
 
 assets_env = AssetsEnvironment(directory='.', url='/assets')
-assets_env.versions = 'hash:32' 
+assets_env.versions = 'hash:32'
 
 # TODO it doesn't work
 assets_env.config['closure_compressor_optimization'] = 'WHITESPACE_ONLY'
 
-vendor = Bundle(*vendor, output='dist/assets/vendor.%(version)s.js', filters='rjsmin')
-main = Bundle('javascripts/main.js', output='dist/assets/app.%(version)s.js', filters='rjsmin')
-
-app = Bundle(vendor, main)
+if vendor:
+    vendor = Bundle(*vendor, output='dist/assets/vendor.%(version)s.js', filters='rjsmin')
+    main = Bundle('javascripts/main.js', output='dist/assets/app.%(version)s.js', filters='rjsmin')
+    app = Bundle(vendor, main)
+else:
+    main = Bundle('javascripts/main.js', output='dist/assets/app.%(version)s.js', filters='rjsmin')
+    app = Bundle(main)
 
 assets_env.register('app', app)
 
@@ -145,10 +156,10 @@ def mkdir_p(path):
         else: raise
 
 def is_partial(filename):
-    return os.path.dirname(filename).startswith('partials') 
+    return os.path.dirname(filename).startswith('partials')
 
 def is_layout(filename):
-    return os.path.dirname(filename).startswith('layouts') 
+    return os.path.dirname(filename).startswith('layouts')
 
 def is_ignored(filename):
     return any((x.startswith(".") for x in filename.split(os.path.sep)))
@@ -191,7 +202,7 @@ def render(extensions=[], stylesheets=None, target='development'):
         mkdir_p(os.path.join('./dist', os.path.dirname(filepath)))
 
         template.stream({
-            'data': data, 
+            'data': data,
             'stylesheets': stylesheets,
             'javascripts': javascripts
         }).dump(os.path.join('./dist', filepath), "utf-8")
@@ -241,7 +252,7 @@ def images():
 @cli.command()
 @click.argument('directory', type=click.Path(file_okay=False), default='.')
 def init(directory):
-    """Initialize `kulfon` directory structure; default is `.`, i.e. 
+    """Initialize `kulfon` directory structure; default is `.`, i.e.
     current directory.
     """
     mkdir_p(join(directory, 'javascripts'))
@@ -259,7 +270,7 @@ def init(directory):
 
 
 @cli.command()
-@click.option('--target', type=click.Choice(['development', 'production']), 
+@click.option('--target', type=click.Choice(['development', 'production']),
     default='development', help='Build in development or production mode; default is `development`.')
 def build(target):
     click.echo("Building...", nl=False)

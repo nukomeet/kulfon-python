@@ -5,7 +5,7 @@ setup(
     description='Fast and simple static site generator',
     author='Zaiste',
     author_email='oh@zaiste.net',
-    version='0.2.5',
+    version='0.2.7',
     py_modules=['kulfon'],
     install_requires=[
         'click',
