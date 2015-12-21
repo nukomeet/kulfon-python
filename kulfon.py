@@ -46,9 +46,9 @@ BASE_HTML="""
 <body>
   {% block content %}{% endblock %}
 
-  {% assets "app" %}
-  <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-  {% endassets %}
+  {% for filename in javascripts %}¬
+  <script type="text/javascript" src="/assets/{{ filename }}"></script>¬
+  {% endfor %}
 </body>
 </html>
 """[1:-1]
@@ -266,7 +266,7 @@ def init(directory):
     fill(join(directory, 'views', 'layouts', 'base.html'), BASE_HTML)
     fill(join(directory, 'data.yml'), DATA_YML)
 
-    touch(join(directory, 'javascripts', 'app.js'))
+    touch(join(directory, 'javascripts', 'main.js'))
 
 
 @cli.command()
