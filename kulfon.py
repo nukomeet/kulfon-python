@@ -36,7 +36,7 @@ BASE_HTML="""
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}Welcome to Kulfon{% endblock %}</title>
+  <title>{% block title %}{{ data['title'] }}{% endblock %}</title>
   <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
 
   <link href="/assets/styles.css" rel="stylesheet">
@@ -46,8 +46,8 @@ BASE_HTML="""
 <body>
   {% block content %}{% endblock %}
 
-  {% for filename in javascripts %}¬
-  <script type="text/javascript" src="/assets/{{ filename }}"></script>¬
+  {% for filename in javascripts %}
+  <script type="text/javascript" src="/assets/{{ filename }}"></script>
   {% endfor %}
 </body>
 </html>
@@ -69,6 +69,7 @@ body {
 
 DATA_YML="""
 name: My Friend
+title: My Title
 """
 
 def md5(fname):
