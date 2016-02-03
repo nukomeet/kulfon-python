@@ -132,7 +132,7 @@ class MyHandler(PatternMatchingEventHandler):
 event_handler = MyHandler(patterns=['*.scss', '*.js', '*.html'])
 observer = Observer()
 
-PORT = 5002
+PORT = int(os.environ.get('PORT')) or 5002
 
 def load_data():
     with open("data.yml", 'r') as stream:
