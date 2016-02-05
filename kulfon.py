@@ -36,10 +36,11 @@ BASE_HTML="""
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <base href="/" >
   <title>{% block title %}{{ data['title'] }}{% endblock %}</title>
-  <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="static/favicon.ico">
 
-  <link href="/assets/styles.css" rel="stylesheet">
+  <link href="assets/styles.css" rel="stylesheet">
 
   {% block head %}{% endblock %}
 </head>
@@ -47,7 +48,7 @@ BASE_HTML="""
   {% block content %}{% endblock %}
 
   {% for filename in javascripts %}
-  <script type="text/javascript" src="/assets/{{ filename }}"></script>
+  <script type="text/javascript" src="assets/{{ filename }}"></script>
   {% endfor %}
 </body>
 </html>
