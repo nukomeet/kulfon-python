@@ -16,8 +16,7 @@ import time
 import hashlib
 import logging
 
-from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler
+from livereload import Server, shell
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -25,10 +24,6 @@ from webassets import Environment as AssetsEnvironment
 from webassets import Bundle
 from webassets.ext.jinja2 import AssetsExtension
 from webassets.script import CommandLineEnvironment
-
-import SimpleHTTPServer
-import SocketServer
-
 
 BASE_HTML="""
 <!DOCTYPE html>
@@ -72,6 +67,13 @@ name: My Friend
 title: My Title
 """
 
+class DictAsMember(dict):
+    def __getattr__(self, name):
+        value = self[name]
+        if isinstance(value, dict):
+            value = DictAsMember(value)
+        return value
+
 def md5(fname):
     hash = hashlib.md5()
     with open(fname, "rb") as f:
@@ -113,31 +115,13 @@ else:
     app = Bundle(main)
 
 assets_env.register('app', app)
-
-
-class MyHandler(PatternMatchingEventHandler):
-    def on_modified(self, event):
-        load_data()
-        print event
-
-        _, ext = os.path.splitext(event.src_path)
-        switcher = {
-            '.scss': css,
-            '.js': js,
-            '.html': render,
-        }
-        click.echo('Recompiling %s' % ext)
-        switcher.get(ext, lambda: None)()
-
-event_handler = MyHandler(patterns=['*.scss', '*.js', '*.html'])
-observer = Observer()
-
-PORT = int(os.environ.get('PORT')) or 5002
+port = os.environ.get('PORT')
+PORT = int(port) if port else 5002
 
 def load_data():
     with open("data.yml", 'r') as stream:
         global data
-        data = yaml.load(stream)
+        data = DictAsMember(yaml.load(stream))
 
 def touch(fname, times=None):
     with open(fname, 'a'):
@@ -146,7 +130,6 @@ def touch(fname, times=None):
 def fill(fname, content):
     with open(fname, 'w') as file:
         file.write(content)
-
 
 def mkdir_p(path):
     try:
@@ -207,7 +190,6 @@ def render(extensions=[], stylesheets=None, target='development'):
             'stylesheets': stylesheets,
             'javascripts': javascripts
         }).dump(os.path.join('./dist', filepath), "utf-8")
-
 
 
 @click.group()
@@ -283,30 +265,14 @@ def build(target):
     render(stylesheets=stylesheets, target=target)
     click.echo(click.style("\tDone", fg='green'))
 
-
 @cli.command()
-def watch():
-    click.echo("Watching...")
+def serve():
+    server = Server()
 
-    observer.schedule(event_handler, path='javascripts/', recursive=True)
-    observer.schedule(event_handler, path='stylesheets/', recursive=True)
-    observer.schedule(event_handler, path='views/', recursive=True)
-    observer.start()
+    load_data()
 
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+    server.watch('*.scss', css())
+    server.watch('*.js', js())
+    server.watch('*.html', render())
 
-
-@cli.command()
-def server():
-    Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-    SocketServer.TCPServer.allow_reuse_address = True
-    httpd = SocketServer.TCPServer(("", PORT), Handler)
-
-    print "serving at port", PORT
-    os.chdir('dist/')
-    httpd.serve_forever()
+    server.serve(root='dist/', port=PORT, debug=False)
